@@ -53,5 +53,5 @@ config :surveda_ona_connector, SurvedaOnaConnector.Repo,
   username: "postgres",
   password: "postgres",
   database: "surveda_ona_connector_dev",
-  hostname: "localhost",
+  hostname: System.get_env("DATABASE_HOST") || "localhost",
   pool_size: 10

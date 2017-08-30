@@ -19,7 +19,7 @@ config :surveda_ona_connector, SurvedaOnaConnectorWeb.Endpoint,
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$timeZ $metadata[$level] $message\n",
   metadata: [:request_id]
 
 # Import environment specific config. This must remain at the bottom
