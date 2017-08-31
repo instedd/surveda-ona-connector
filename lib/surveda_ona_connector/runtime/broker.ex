@@ -31,9 +31,10 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       # get last run datetime
 
       running_surveys_since(now)
-      |> Enum.each(&poll_survey/1)
+      |> Enum.each(&start_tracking_survey/1)
 
-      # poll old surveys for new results and mark them as done
+      # tracked_surveys
+      |> Enum.each(fn survey -> poll_survey(survey, now) end)
 
       # update last run datetime
 
@@ -76,9 +77,6 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
     surveda_client |> Surveda.Client.get_results(environment_variable_named(:surveda_project), survey_id,
         datetime)
-
-    conn = get conn, project_survey_respondents_results_path(conn, :results, survey.project.id, survey.id, %{"offset" => "0", "_format" => "csv", "since" => Timex.format!(Timex.shift(Timex.now, hours: 2), "%FT%T%:z", :strftime)})
-
   end
 
   defp ona_forms do
@@ -87,11 +85,26 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     forms = ona_client |> Ona.Client.get_forms(environment_variable_named(:ona_project))
   end
 
-  defp poll_survey(%{id: survey_id}, datetime) do
+  defp start_tracking_survey(%{id: survey_id}) do
     try do
+      # query questionnaires
+      # build xlsform
+      # submit form
       # store surveda survey id with corresponding ona form id
+    rescue
+      e ->
+        if Mix.env == :test do
+          IO.inspect e
+          IO.inspect System.stacktrace()
+          raise e
+        end
+        Logger.error "Error occurred while polling survey (id: #{survey_id}): #{inspect e} #{inspect System.stacktrace}"
+    end
+  end
 
-      # results = results_since(survey_id, datetime)
+  defp poll_survey(survey, datetime) do
+    try do
+      # results = results_since(survey.id, datetime)
 
       # build XLSForm
       # push to ona
@@ -102,7 +115,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
           IO.inspect System.stacktrace()
           raise e
         end
-        Logger.error "Error occurred while polling survey (id: #{survey_id}): #{inspect e} #{inspect System.stacktrace}"
+        Logger.error "Error occurred while polling survey (id: #{survey.id}): #{inspect e} #{inspect System.stacktrace}"
     end
   end
 

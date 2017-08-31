@@ -14,7 +14,7 @@ defmodule Surveda.Client do
     |> parse_response
   end
 
-  def get_results(client, project_id, survey_id since) do
+  def get_results(client, project_id, survey_id, since) do
     url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?final=true&_format='json'&since='#{since |> DateTime.to_string}}'"
     client.oauth2_client
     |> OAuth2.Client.get(url)
