@@ -1,5 +1,5 @@
-defmodule Ona.Client do
-  alias Ona.Client
+defmodule SurvedaOnaConnector.Runtime.Ona.Client do
+  alias SurvedaOnaConnector.Runtime.Ona.Client
   defstruct [:base_url, :oauth2_client]
 
   def new(url, token) do

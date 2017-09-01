@@ -30,7 +30,7 @@ services:
       HTTP_PORT: 80
       TERM: xterm
     ports:
-      - 4000:80
+      - 4001:80
 
   # webpack:
   #   build:

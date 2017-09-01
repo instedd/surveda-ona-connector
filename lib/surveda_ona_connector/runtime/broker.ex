@@ -3,6 +3,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   import Ecto.Query
   import Ecto
   alias SurvedaOnaConnector.{Repo, Logger}
+  alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
   # Survey, Questionnaire, Respondent, Response
 
   @poll_interval :timer.minutes(20)
@@ -29,11 +30,15 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   def handle_info(:poll, state, now) do
     try do
       # get last run datetime
+      now = %{now | day: now.day - 1}
 
-      running_surveys_since(now)
+      # query for new surveys and star tracking
+      surveda_client()
+      |> running_surveys_since(now)
       |> Enum.each(&start_tracking_survey/1)
 
-      # tracked_surveys
+      # poll tracked_surveys
+      Survey |> Repo.all
       |> Enum.each(fn survey -> poll_survey(survey, now) end)
 
       # update last run datetime
@@ -65,18 +70,16 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     {:reply, :ok, state}
   end
 
-  defp running_surveys_since(datetime) do
-    surveda_client = Surveda.Client.new(environment_variable_named(:surveda_host),environment_variable_named(:surveda_api_token))
-
-    surveda_client |> Surveda.Client.get_surveys(environment_variable_named(:surveda_project),
-        datetime)
+  defp surveda_client() do
+    Surveda.Client.new(environment_variable_named(:surveda_host),environment_variable_named(:surveda_api_token))
   end
 
-  defp results_since(survey_id, datetime) do
-    surveda_client = Surveda.Client.new(environment_variable_named(:surveda_host),environment_variable_named(:surveda_api_token))
+  defp running_surveys_since(client, datetime) do
+    client |> Surveda.Client.get_surveys(environment_variable_named(:surveda_project), datetime)
+  end
 
-    surveda_client |> Surveda.Client.get_results(environment_variable_named(:surveda_project), survey_id,
-        datetime)
+  defp results_since(client, survey_id, datetime) do
+    client |> Surveda.Client.get_results(environment_variable_named(:surveda_project), survey_id, datetime)
   end
 
   defp ona_forms do
@@ -85,11 +88,22 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     forms = ona_client |> Ona.Client.get_forms(environment_variable_named(:ona_project))
   end
 
-  defp start_tracking_survey(%{id: survey_id}) do
+  defp start_tracking_survey(%{id: survey_id, project_id: project_id}) do
     try do
       # query questionnaires
+      questionnaires = surveda_client() |> Surveda.Client.get_questionnaires(project_id, survey_id)
+
       # build xlsform
+      builder = XLSFormBuilder.new("survey_test.xlsx")
+      questionnaires
+      |> Enum.each(fn quiz ->
+        builder = builder |> XLSFormBuilder.add_questionnaire(quiz)
+      end)
+
+      xlsform = builder.build
+
       # submit form
+
       # store surveda survey id with corresponding ona form id
     rescue
       e ->
@@ -104,9 +118,12 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   defp poll_survey(survey, datetime) do
     try do
-      # results = results_since(survey.id, datetime)
+      # poll results
+      results = surveda_client()
+      |> results_since(survey.id, datetime)
 
-      # build XLSForm
+      # build Form Submition
+
       # push to ona
     rescue
       e ->
