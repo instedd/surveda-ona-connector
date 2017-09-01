@@ -30,7 +30,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   def handle_info(:poll, state, now) do
     try do
       # get last run datetime
-      now = %{now | day: now.day - 1}
+      now = %{now | hour: 0}
 
       # query for new surveys and star tracking
       surveda_client()
@@ -82,10 +82,10 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     client |> Surveda.Client.get_results(environment_variable_named(:surveda_project), survey_id, datetime)
   end
 
-  defp ona_forms do
+  defp submit_ona_form(xls_form) do
     ona_client = Ona.Client.new(environment_variable_named(:ona_host),environment_variable_named(:ona_api_token))
 
-    forms = ona_client |> Ona.Client.get_forms(environment_variable_named(:ona_project))
+    forms = ona_client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
   end
 
   defp start_tracking_survey(%{id: survey_id, project_id: project_id}) do
@@ -100,9 +100,10 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
         builder = builder |> XLSFormBuilder.add_questionnaire(quiz)
       end)
 
-      xlsform = builder.build
+      xls_form = builder.build
 
       # submit form
+      submit_ona_form(xls_form)
 
       # store surveda survey id with corresponding ona form id
     rescue
@@ -137,7 +138,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   end
 
   def environment_variable_named(name) do
-    case Application.get_env(:ask, SurvedaOnaConnector.Runtime.Broker)[name] do
+    case Application.get_env(:surveda_ona_connector, SurvedaOnaConnector.Runtime.Broker)[name] do
       {:system, env_var} ->
         System.get_env(env_var)
       {:system, env_var, default} ->

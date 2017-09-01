@@ -7,10 +7,10 @@ defmodule SurvedaOnaConnector.Runtime.Ona.Client do
     %Client{base_url: url, oauth2_client: oauth2_client}
   end
 
-  def get_forms(client, _project_id) do
-    url = "#{client.base_url}/api/v1/forms"
+  def submit_project_form(client, project_id, xls_file) do
+    url = "#{client.base_url}/api/v1/projects/#{project_id}/forms"
     client.oauth2_client
-    |> OAuth2.Client.get(url)
+    |> OAuth2.Client.post(url, "xls_file=#{xls_file}")
     |> parse_response
   end
 

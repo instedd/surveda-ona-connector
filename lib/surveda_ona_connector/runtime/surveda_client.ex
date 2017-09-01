@@ -8,29 +8,30 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
   end
 
   def get_surveys(client, project_id, since) do
-    client |> get("#{client.base_url}/api/v1/projects/#{project_id}/surveys?state='completed'&since='#{since |> DateTime.to_string}}'")
+    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys?state='completed'&since='#{since |> DateTime.to_string}'")
   end
 
   def get_survey(client, project_id, survey_id) do
-    client |> get("#{client.base_url}/api/v1/projects/#{project_id}/surveys?id=#{survey_id}")
+    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys?id=#{survey_id}")
   end
 
   def get_questionnaires(client, project_id, survey_id) do
     ids = get_survey(client, project_id, survey_id)["questionnaire_ids"]
 
     ids |> Enum.map(fn quiz_id ->
-      client |> get("#{client.base_url}/api/v1/projects/#{project_id}/questionnaires/?id=#{quiz_id}")
+      client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/questionnaires/?id=#{quiz_id}")
     end)
   end
 
   def get_results(client, project_id, survey_id, since) do
-    client |> get("#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?final=true&_format='json'&since='#{since |> DateTime.to_string}}'")
+    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?final=true&_format='json'&since='#{since |> DateTime.to_string}'")
   end
 
   def get(client, url) do
-    response = client.oauth2_client
+    {:ok, response} = client.oauth2_client
     |> OAuth2.Client.get(url)
     |> parse_response
+
     response["data"]
   end
 

@@ -24,6 +24,8 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
           |> Sheet.set_at(1, length(builder.survey.rows), step["store"])
           |> Sheet.set_at(2, length(builder.survey.rows), step["title"])
 
+          #add empty row to choices sheet
+
           choices = step["choices"]
           |> Enum.reduce(builder.choices, fn(choice, sheet) ->
             sheet
