@@ -8,7 +8,7 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
   end
 
   def get_surveys(client, project_id, since) do
-    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys?state='completed'&since='#{since |> DateTime.to_string}'")
+    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys?state=completed&since=#{since |> DateTime.to_string}")
   end
 
   def get_survey(client, project_id, survey_id) do
@@ -24,7 +24,7 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
   end
 
   def get_results(client, project_id, survey_id, since) do
-    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?final=true&_format='json'&since='#{since |> DateTime.to_string}'")
+    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?final=true&_format=json&since=#{since |> DateTime.to_string}")
   end
 
   def get(client, url) do
