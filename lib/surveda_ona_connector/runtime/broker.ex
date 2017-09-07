@@ -2,7 +2,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   use GenServer
   import Ecto.Query
   import Ecto
-  alias SurvedaOnaConnector.{Repo, Logger}
+  alias SurvedaOnaConnector.{Repo, Logger, Survey}
   alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
   # Survey, Questionnaire, Respondent, Response
 
@@ -30,7 +30,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   def handle_info(:poll, state, now) do
     try do
       # get last run datetime
-      now = %{now | hour: 0}
+      now = %{now | month: 1}
 
       # query for new surveys and star tracking
       surveda_client()
@@ -88,19 +88,18 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     forms = ona_client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
   end
 
-  defp start_tracking_survey(%{id: survey_id, project_id: project_id}) do
+  defp start_tracking_survey(%{"id" => survey_id, "project_id" => project_id}) do
     try do
       # query questionnaires
       questionnaires = surveda_client() |> Surveda.Client.get_questionnaires(project_id, survey_id)
 
       # build xlsform
-      builder = XLSFormBuilder.new("survey_test.xlsx")
-      questionnaires
-      |> Enum.each(fn quiz ->
-        builder = builder |> XLSFormBuilder.add_questionnaire(quiz)
+      builder = questionnaires
+      |> Enum.reduce(XLSFormBuilder.new("survey_test.xlsx"), fn(quiz, builder) ->
+        builder |> XLSFormBuilder.add_questionnaire(quiz)
       end)
 
-      xls_form = builder.build
+      xls_form = builder |> XLSFormBuilder.build()
 
       # submit form
       submit_ona_form(xls_form)
@@ -120,8 +119,8 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   defp poll_survey(survey, datetime) do
     try do
       # poll results
-      results = surveda_client()
-      |> results_since(survey.id, datetime)
+      # results = surveda_client()
+      # |> results_since(survey.id, datetime)
 
       # build Form Submition
 

@@ -4,14 +4,14 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
   import Ecto
   alias SurvedaOnaConnector.Runtime.XLSFormBuilder
   alias Elixlsx.{Workbook, Sheet}
-  defstruct [:name, :survey, :choices]
+  defstruct [:filename, :survey, :choices]
 
   def new(filename) do
     survey = %Sheet{name: "survey", rows: [["type", "name", "label", "hint", "required", "constraint", "constraint_message", "relevant", "default", "appearance", "calculation"]]}
 
     choices = %Sheet{name: "choices", rows: [["list name", "name", "label", "image"]]}
 
-    %XLSFormBuilder{name: filename, survey: survey, choices: choices}
+    %XLSFormBuilder{filename: filename, survey: survey, choices: choices}
   end
 
   def add_questionnaire(builder, quiz) do
@@ -20,37 +20,39 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
       case step["type"] do
         "multiple-choice" ->
           survey = builder.survey
-          |> Sheet.set_at(0, length(builder.survey.rows), "select_one #{step['store']}")
-          |> Sheet.set_at(1, length(builder.survey.rows), step["store"])
-          |> Sheet.set_at(2, length(builder.survey.rows), step["title"])
+          |> Sheet.set_at(length(builder.survey.rows), 0, "select_one #{step['store']}")
+          |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
+          |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
 
           #add empty row to choices sheet if not the first choice
-          if length(builder.choices.rows) > 1 do
+          builder = if length(builder.choices.rows) > 1 do
             # builder = %{builder | choices: Sheet.set_at(0, length(builder.choices.rows), "")}
-            builder = %{builder | choices: %{choices | rows: choices.rows ++ [[]]}}
+            %{builder | choices: %{builder.choices | rows: builder.choices.rows ++ [[]]}}
+          else
+           builder
           end
 
           choices = step["choices"]
           |> Enum.reduce(builder.choices, fn(choice, sheet) ->
             sheet
-            |> Sheet.set_at(0, length(builder.choices.rows), step["store"])
-            |> Sheet.set_at(1, length(builder.choices.rows), choice["response"])
-            |> Sheet.set_at(2, length(builder.choices.rows), choice["response"])
+            |> Sheet.set_at(length(builder.choices.rows), 0, step["store"])
+            |> Sheet.set_at(length(builder.choices.rows), 1, choice["response"])
+            |> Sheet.set_at(length(builder.choices.rows), 2, choice["response"])
           end)
 
           %{builder | survey: survey, choices: choices}
         "explanation" ->
           survey = builder.survey
-          |> Sheet.set_at(0, length(builder.survey.rows), "note")
-          |> Sheet.set_at(1, length(builder.survey.rows), step["store"])
-          |> Sheet.set_at(2, length(builder.survey.rows), step["title"])
+          |> Sheet.set_at(length(builder.survey.rows), 0, "note")
+          |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
+          |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
 
           %{builder | survey: survey}
         "numeric" ->
           survey = builder.survey
-          |> Sheet.set_at(0, length(builder.survey.rows), "integer")
-          |> Sheet.set_at(1, length(builder.survey.rows), step["store"])
-          |> Sheet.set_at(2, length(builder.survey.rows), step["title"])
+          |> Sheet.set_at(length(builder.survey.rows), 0, "integer")
+          |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
+          |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
 
           %{builder | survey: survey}
         _ -> builder
@@ -59,9 +61,11 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
   end
 
   def build(builder) do
-    %Workbook{}
+    {:ok, filename} = %Workbook{}
     |> Workbook.append_sheet(builder.survey)
     |> Workbook.append_sheet(builder.choices)
     |> Elixlsx.write_to(builder.filename)
+    # |> Elixlsx.write_to("/tmp/#{builder.filename}")
+    filename
   end
 end

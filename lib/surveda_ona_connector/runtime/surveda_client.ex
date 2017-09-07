@@ -8,37 +8,42 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
   end
 
   def get_surveys(client, project_id, since) do
-    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys?state=completed&since=#{since |> DateTime.to_string}")
+    url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys?#{URI.encode_query(state: :completed, since: since)}"
+
+    client |> get(url)
   end
 
   def get_survey(client, project_id, survey_id) do
-    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys?id=#{survey_id}")
+    url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}"
+
+    client |> get(url)
   end
 
   def get_questionnaires(client, project_id, survey_id) do
-    ids = get_survey(client, project_id, survey_id)["questionnaire_ids"]
+    %{"questionnaire_ids" => ids} = get_survey(client, project_id, survey_id)
 
     ids |> Enum.map(fn quiz_id ->
-      client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/questionnaires/?id=#{quiz_id}")
+      url = "#{client.base_url}/api/v1/projects/#{project_id}/questionnaires/#{quiz_id}"
+      client |> get(url)
     end)
   end
 
   def get_results(client, project_id, survey_id, since) do
-    client |> get("http://#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?final=true&_format=json&since=#{since |> DateTime.to_string}")
+    url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?#{URI.encode_query(final: true, _format: :json, since: since)}"
+    client |> get(url)
   end
 
   def get(client, url) do
     {:ok, response} = client.oauth2_client
     |> OAuth2.Client.get(url)
     |> parse_response
-
-    response["data"]
+    response
   end
 
   defp parse_response(response) do
     case response do
-      {:ok, response = %{status_code: 200}} ->
-        {:ok, Poison.decode!(response.body)}
+      {:ok, response = %{status_code: 200, body: %{"data" => data}}} ->
+        {:ok, data}
       {:ok, response} ->
         {:error, response.status_code}
       {:error, %OAuth2.Error{reason: reason}} ->
