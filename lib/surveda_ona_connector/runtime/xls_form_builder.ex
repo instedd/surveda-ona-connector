@@ -60,11 +60,10 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
   end
 
   def build(builder) do
-    {:ok, filename} = %Workbook{}
+    {:ok, file} = %Workbook{}
     |> Workbook.append_sheet(builder.survey)
     |> Workbook.append_sheet(builder.choices)
-    |> Elixlsx.write_to(builder.filename)
-    # |> Elixlsx.write_to("/tmp/#{builder.filename}")
-    filename
+    |> Elixlsx.write_to_memory(builder.filename)
+    file
   end
 end

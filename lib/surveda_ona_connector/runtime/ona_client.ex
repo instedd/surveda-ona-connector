@@ -7,14 +7,14 @@ defmodule SurvedaOnaConnector.Runtime.Ona.Client do
     %Client{base_url: url, oauth2_client: oauth2_client}
   end
 
-  def submit_project_form(client, project_id, xls_file) do
+  def submit_project_form(client, project_id, {file_name, file}) do
     url = "#{client.base_url}/api/v1/projects/#{project_id}/forms"
 
     body = {:multipart, [
       {
         "xls_file",
-        File.read!("./#{xls_file}"),
-        {"form-data", [name: "xls_file", filename: xls_file]},
+        file,
+        {"form-data", [name: "xls_file", filename: file_name]},
         []
       }
     ]}
