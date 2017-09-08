@@ -20,14 +20,13 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
       case step["type"] do
         "multiple-choice" ->
           survey = builder.survey
-          |> Sheet.set_at(length(builder.survey.rows), 0, "select_one #{step['store']}")
+          |> Sheet.set_at(length(builder.survey.rows), 0, "select_one #{step["store"]}")
           |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
           |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
 
           #add empty row to choices sheet if not the first choice
           builder = if length(builder.choices.rows) > 1 do
-            # builder = %{builder | choices: Sheet.set_at(0, length(builder.choices.rows), "")}
-            %{builder | choices: %{builder.choices | rows: builder.choices.rows ++ [[]]}}
+            %{builder | choices: Sheet.set_at(builder.choices, length(builder.choices.rows), 0, "")}
           else
            builder
           end
@@ -35,9 +34,9 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
           choices = step["choices"]
           |> Enum.reduce(builder.choices, fn(choice, sheet) ->
             sheet
-            |> Sheet.set_at(length(builder.choices.rows), 0, step["store"])
-            |> Sheet.set_at(length(builder.choices.rows), 1, choice["response"])
-            |> Sheet.set_at(length(builder.choices.rows), 2, choice["response"])
+            |> Sheet.set_at(length(sheet.rows), 0, step["store"])
+            |> Sheet.set_at(length(sheet.rows), 1, choice["value"])
+            |> Sheet.set_at(length(sheet.rows), 2, choice["value"])
           end)
 
           %{builder | survey: survey, choices: choices}

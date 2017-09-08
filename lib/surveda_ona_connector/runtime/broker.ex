@@ -88,14 +88,14 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     forms = ona_client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
   end
 
-  defp start_tracking_survey(%{"id" => survey_id, "project_id" => project_id}) do
+  defp start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name}) do
     try do
       # query questionnaires
       questionnaires = surveda_client() |> Surveda.Client.get_questionnaires(project_id, survey_id)
 
       # build xlsform
       builder = questionnaires
-      |> Enum.reduce(XLSFormBuilder.new("survey_test.xlsx"), fn(quiz, builder) ->
+      |> Enum.reduce(XLSFormBuilder.new("#{ona_valid_filename(survey_name)}.xlsx"), fn(quiz, builder) ->
         builder |> XLSFormBuilder.add_questionnaire(quiz)
       end)
 
@@ -136,7 +136,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  def environment_variable_named(name) do
+  defp environment_variable_named(name) do
     case Application.get_env(:surveda_ona_connector, SurvedaOnaConnector.Runtime.Broker)[name] do
       {:system, env_var} ->
         System.get_env(env_var)
@@ -149,5 +149,12 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
         end
       value -> value
     end
+  end
+
+  defp ona_valid_filename(survey_name) do
+    (survey_name || "Untitled Survey")
+    |> String.replace(~r/ ([a-z])/, "_\\1")
+    |> String.replace(" ", "")
+    |> Macro.underscore()
   end
 end
