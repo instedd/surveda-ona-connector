@@ -1,10 +1,8 @@
 defmodule SurvedaOnaConnector.Runtime.Broker do
   use GenServer
-  import Ecto.Query
   import Ecto
   alias SurvedaOnaConnector.{Repo, Logger, Survey}
   alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
-  # Survey, Questionnaire, Respondent, Response
 
   @poll_interval :timer.minutes(20)
   @server_ref {:global, __MODULE__}
@@ -70,22 +68,28 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     {:reply, :ok, state}
   end
 
-  defp surveda_client() do
+  def surveda_client() do
     Surveda.Client.new(environment_variable_named(:surveda_host),environment_variable_named(:surveda_api_token))
   end
 
-  defp running_surveys_since(client, datetime) do
+  def running_surveys_since(client, datetime) do
     client |> Surveda.Client.get_surveys(environment_variable_named(:surveda_project), datetime)
   end
 
-  defp results_since(client, survey_id, datetime) do
+  def results_since(client, survey_id, datetime) do
     client |> Surveda.Client.get_results(environment_variable_named(:surveda_project), survey_id, datetime)
   end
 
-  defp submit_ona_form(xls_form) do
-    ona_client = Ona.Client.new(environment_variable_named(:ona_host),environment_variable_named(:ona_api_token))
+  def ona_client() do
+    Ona.Client.new(environment_variable_named(:ona_host),environment_variable_named(:ona_api_token))
+  end
 
-    forms = ona_client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
+  def submit_ona_form(client, xls_form) do
+    client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
+  end
+
+  def delete_all_project_forms(client) do
+    client |> Ona.Client.delete_all_project_forms(environment_variable_named(:ona_project))
   end
 
   defp start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name}) do
@@ -102,7 +106,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       xls_form = builder |> XLSFormBuilder.build()
 
       # submit form
-      submit_ona_form(xls_form)
+      ona_client() |> submit_ona_form(xls_form)
 
       # store surveda survey id with corresponding ona form id
     rescue

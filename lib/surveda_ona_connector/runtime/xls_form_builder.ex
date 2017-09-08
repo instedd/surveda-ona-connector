@@ -1,7 +1,5 @@
 defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
   use GenServer
-  import Ecto.Query
-  import Ecto
   alias SurvedaOnaConnector.Runtime.XLSFormBuilder
   alias Elixlsx.{Workbook, Sheet}
   defstruct [:filename, :survey, :choices]

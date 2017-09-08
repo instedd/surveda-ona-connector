@@ -42,7 +42,7 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
 
   defp parse_response(response) do
     case response do
-      {:ok, response = %{status_code: 200, body: %{"data" => data}}} ->
+      {:ok, %{status_code: 200, body: %{"data" => data}}} ->
         {:ok, data}
       {:ok, response} ->
         {:error, response.status_code}
