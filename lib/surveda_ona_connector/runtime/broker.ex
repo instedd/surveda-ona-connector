@@ -136,7 +136,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  defp environment_variable_named(name) do
+  def environment_variable_named(name) do
     case Application.get_env(:surveda_ona_connector, SurvedaOnaConnector.Runtime.Broker)[name] do
       {:system, env_var} ->
         System.get_env(env_var)
