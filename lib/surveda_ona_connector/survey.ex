@@ -6,19 +6,19 @@ defmodule SurvedaOnaConnector.Survey do
   schema "surveys" do
     field :name, :string
     field :surveda_id, :integer
+    field :surveda_project_id, :integer
     field :ona_id, :integer
     field :last_poll, :utc_datetime
-    field :final, :boolean, default: false
+    field :active, :boolean, default: true
 
-    belongs_to :project, Ask.Project
 
     timestamps()
   end
 
   @doc false
-  def changeset(%Survey{} = project, attrs) do
-    project
-    |> cast(attrs, [:name])
-    |> validate_required([:name])
+  def changeset(%Survey{} = survey, attrs) do
+    survey
+    |> cast(attrs, [:name, :surveda_id, :surveda_project_id, :ona_id, :last_poll, :active])
+    |> validate_required([:name, :surveda_id, :surveda_project_id])
   end
 end

@@ -8,7 +8,7 @@ defmodule SurvedaOnaConnector.Repo.Migrations.CreateSurveys do
       add :ona_id, :integer
       add :project_id, references(:projects, on_delete: :nothing)
       add :last_poll, :utc_datetime
-      add :final, :boolean, default: false
+      add :final, :boolean, default: true
 
       timestamps()
     end

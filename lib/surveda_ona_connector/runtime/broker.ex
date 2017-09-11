@@ -27,19 +27,15 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   def handle_info(:poll, state, now) do
     try do
-      # get last run datetime
-      now = %{now | month: 1}
-
       # query for new surveys and star tracking
       surveda_client()
-      |> running_surveys_since(now)
+      |> running_surveys_since(environment_variable_named(:surveda_project), %{now | month: 1})
       |> Enum.each(&start_tracking_survey/1)
 
       # poll tracked_surveys
-      Survey |> Repo.all
+      Survey
+      |> Repo.all
       |> Enum.each(fn survey -> poll_survey(survey, now) end)
-
-      # update last run datetime
 
       {:noreply, state}
     rescue
@@ -72,12 +68,12 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     Surveda.Client.new(environment_variable_named(:surveda_host),environment_variable_named(:surveda_api_token))
   end
 
-  def running_surveys_since(client, datetime) do
-    client |> Surveda.Client.get_surveys(environment_variable_named(:surveda_project), datetime)
+  def running_surveys_since(client, project_id, datetime) do
+    client |> Surveda.Client.get_surveys(project_id, datetime)
   end
 
-  def results_since(client, survey_id, datetime) do
-    client |> Surveda.Client.get_results(environment_variable_named(:surveda_project), survey_id, datetime)
+  def results_since(client, project_id, survey_id, datetime) do
+    client |> Surveda.Client.get_results(project_id, survey_id, datetime)
   end
 
   def ona_client() do
@@ -88,8 +84,9 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
   end
 
-  def delete_all_project_forms(client) do
-    client |> Ona.Client.delete_all_project_forms(environment_variable_named(:ona_project))
+  def delete_all_project_forms do
+    ona_client() |> Ona.Client.delete_all_project_forms(environment_variable_named(:ona_project))
+    :ok
   end
 
   defp start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name}) do
@@ -106,9 +103,17 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       xls_form = builder |> XLSFormBuilder.build()
 
       # submit form
-      ona_client() |> submit_ona_form(xls_form)
+      {:ok, ona_response} = ona_client() |> submit_ona_form(xls_form)
 
-      # store surveda survey id with corresponding ona form id
+      survey  = Survey |> Repo.get_by(surveda_id: survey_id)
+
+      changeset =
+        Survey.changeset(survey || %Survey{}, %{ona_id: ona_response["formid"], surveda_id: survey_id, surveda_project_id: project_id, name: survey_name, last_poll: DateTime.utc_now})
+      if survey do
+        Repo.update(changeset)
+      else
+        Repo.insert(changeset)
+      end
     rescue
       e ->
         if Mix.env == :test do
@@ -120,11 +125,11 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  defp poll_survey(survey, datetime) do
+  defp poll_survey(survey, _datetime) do
     try do
       # poll results
       # results = surveda_client()
-      # |> results_since(survey.id, datetime)
+      # |> results_since(survey.surveda_project_id, survey.surveda_id, datetime)
 
       # build Form Submition
 
