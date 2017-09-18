@@ -7,7 +7,7 @@ use Mix.Config
 # watchers to your application. For example, we use it
 # with brunch.io to recompile .js and .css sources.
 config :surveda_ona_connector, SurvedaOnaConnectorWeb.Endpoint,
-  http: [port: 4000],
+  http: [port: 80],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
