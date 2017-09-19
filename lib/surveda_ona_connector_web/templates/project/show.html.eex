@@ -16,7 +16,9 @@
       <td><%= survey["id"] %></td>
       <td><%= survey["name"] %></td>
       <td><%= survey["read_only"] %></td>
-
+      <td class="text-right">
+        <span><%= link "Track", to: track_survey_path(@conn, :track_survey, @project_id, survey["id"]), class: "btn btn-default btn-xs" %></span>
+      </td>
     </tr>
 <% end %>
   </tbody>

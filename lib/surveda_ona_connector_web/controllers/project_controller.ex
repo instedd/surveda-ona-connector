@@ -22,10 +22,12 @@ defmodule SurvedaOnaConnectorWeb.ProjectController do
   def show(conn, %{"id" => id}) do
     surveda_client = Broker.surveda_client()
     surveys = surveda_client
-      |> Surveda.Client.get_surveys(id, %{DateTime.utc_now | month: 1})
+      |> Surveda.Client.get_all_surveys(id)
 
-    render(conn, "show.html", surveys: surveys)
+    render(conn, "show.html", surveys: surveys, project_id: id)
   end
 
-
+  def track_survey(conn, %{"survey_id" => survey_id, "project_id" => project_id}) do
+    redirect conn, to: project_path(conn, :show, project_id)
+  end
 end

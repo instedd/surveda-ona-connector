@@ -18,6 +18,7 @@ defmodule SurvedaOnaConnectorWeb.Router do
 
     get "/", PageController, :index
     resources "/projects", ProjectController
+    get "/projects/:project_id/track_survey/:survey_id", ProjectController, :track_survey, as: :track_survey
   end
 
   # Other scopes may use custom stacks.

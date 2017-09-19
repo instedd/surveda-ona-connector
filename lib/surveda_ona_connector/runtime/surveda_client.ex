@@ -19,6 +19,12 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
     client |> get(url)
   end
 
+  def get_all_surveys(client, project_id) do
+    url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys"
+
+    client |> get(url)
+  end
+
   def get_survey(client, project_id, survey_id) do
     url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}"
 
