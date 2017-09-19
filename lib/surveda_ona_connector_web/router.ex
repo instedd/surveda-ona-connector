@@ -16,7 +16,7 @@ defmodule SurvedaOnaConnectorWeb.Router do
   scope "/", SurvedaOnaConnectorWeb do
     pipe_through :browser # Use the default browser stack
 
-    get "/", PageController, :index
+    get "/", ProjectController, :index
     resources "/projects", ProjectController
     get "/projects/:project_id/track_survey/:survey_id", ProjectController, :track_survey, as: :track_survey
   end
