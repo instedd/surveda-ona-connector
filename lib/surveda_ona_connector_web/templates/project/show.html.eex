@@ -1,0 +1,23 @@
+<h2>Listing Surveys</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Name</th>
+      <th>Read Only</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for survey <- @surveys do %>
+    <tr>
+      <td><%= survey["id"] %></td>
+      <td><%= survey["name"] %></td>
+      <td><%= survey["read_only"] %></td>
+
+    </tr>
+<% end %>
+  </tbody>
+</table>

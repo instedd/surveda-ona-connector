@@ -7,6 +7,12 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
     %Client{base_url: url, oauth2_client: oauth2_client}
   end
 
+  def get_projects(client) do
+    url = "#{client.base_url}/api/v1/projects/"
+
+    client |> get(url)
+  end
+
   def get_surveys(client, project_id, since) do
     url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys?#{URI.encode_query(state: :completed, since: since)}"
 

@@ -1,0 +1,38 @@
+<div class="jumbotron">
+  <h2>Hello Projects, from Phoenix!</h2>
+
+
+
+<h2>Listing projects</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Name</th>
+      <th>Read Only</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for project <- @projects do %>
+    <tr>
+      <td><%= project["id"] %></td>
+      <td><%= project["name"] %></td>
+      <td><%= project["read_only"] %></td>
+      <td class="text-right">
+        <span><%= link "Show", to: project_path(@conn, :show, project["id"]), class: "btn btn-default btn-xs" %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+</div>
