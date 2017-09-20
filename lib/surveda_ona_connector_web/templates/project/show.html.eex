@@ -17,7 +17,11 @@
       <td><%= survey["name"] %></td>
       <td><%= survey["state"] %></td>
       <td class="text-right">
-        <span><%= link "Track", to: track_survey_path(@conn, :track_survey, @project_id, survey["id"], elem(html_escape(survey["name"]), 1)), class: "btn btn-default btn-xs" %></span>
+        <%= if Enum.member?(@surveys_local_ids, survey["id"]) do %>
+          <span>Already tracking</span>
+        <%= else %>
+          <span><%= link "Track", to: track_survey_path(@conn, :track_survey, @project_id, survey["id"], elem(html_escape(survey["name"]), 1)), class: "btn btn-default btn-xs" %></span>
+        <%= end %>
       </td>
     </tr>
 <% end %>

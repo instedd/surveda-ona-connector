@@ -89,7 +89,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     :ok
   end
 
-  defp start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name}) do
+  def start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name}) do
     try do
       # query questionnaires
       questionnaires = surveda_client() |> Surveda.Client.get_questionnaires(project_id, survey_id)

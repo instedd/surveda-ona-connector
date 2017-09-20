@@ -17,7 +17,6 @@ defmodule SurvedaOnaConnector.Runtime.Ona.Client do
       |> parse_response
   end
 
-
   def delete_all_project_forms(client, project_id) do
     {:ok, forms} = client.oauth2_client
       |> OAuth2.Client.get("http://api.ona.io/api/v1/projects/#{project_id}/forms")
