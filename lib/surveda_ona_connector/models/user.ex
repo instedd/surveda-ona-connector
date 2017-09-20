@@ -7,6 +7,7 @@ defmodule SurvedaOnaConnector.User do
   schema "users" do
     field :email, :string
     field :ona_api_token, :string
+    field :ona_project_id, :integer
     has_many :surveys, Survey
 
     timestamps()
@@ -14,7 +15,7 @@ defmodule SurvedaOnaConnector.User do
 
   def changeset(struct, params \\ %{}) do
     struct
-    |> cast(params, [:email, :ona_api_token])
+    |> cast(params, [:email, :ona_api_token, :ona_project_id])
     |> validate_required([:email])
     |> unique_constraint(:email)
     |> validate_format(:email, ~r/@/)

@@ -12,6 +12,12 @@
   </div>
 
   <div class="form-group">
+    <%= label f, :ona_project_id, "ONA Project ID", class: "control-label" %>
+    <%= text_input f, :ona_project_id, class: "form-control" %>
+    <%= error_tag f, :ona_project_id %>
+  </div>
+
+  <div class="form-group">
     <%= label f, :ona_api_token, "ONA API Token", class: "control-label" %>
     <%= text_input f, :ona_api_token, class: "form-control" %>
     <%= error_tag f, :ona_api_token %>
