@@ -1,7 +1,7 @@
 defmodule SurvedaOnaConnector.Survey do
   use Ecto.Schema
   import Ecto.Changeset
-  alias SurvedaOnaConnector.Survey
+  alias __MODULE__
 
   schema "surveys" do
     field :name, :string
@@ -10,7 +10,7 @@ defmodule SurvedaOnaConnector.Survey do
     field :ona_id, :integer
     field :last_poll, :utc_datetime
     field :active, :boolean, default: true
-
+    belongs_to :user, SurvedaOnaConnector.User
 
     timestamps()
   end
