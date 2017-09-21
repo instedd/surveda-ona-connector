@@ -23,7 +23,7 @@ defmodule SurvedaOnaConnectorWeb.ProjectController do
   end
 
   def track_survey(conn, %{"survey_id" => survey_id, "project_id" => project_id, "survey_name" => survey_name}) do
-    Broker.start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name})
+    Broker.insert_or_update_survey(nil, nil, survey_id, project_id, survey_name)
 
     redirect conn, to: project_path(conn, :show, project_id)
   end

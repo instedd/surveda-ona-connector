@@ -1,6 +1,6 @@
 defmodule SurvedaOnaConnector.Runtime.Broker do
   use GenServer
-  import Ecto
+  import Ecto.Query
   alias SurvedaOnaConnector.{Repo, Logger, Survey}
   alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
 
@@ -27,10 +27,8 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   def handle_info(:poll, state, now) do
     try do
-      # query for new surveys and star tracking
-      surveda_client()
-      |> running_surveys_since(environment_variable_named(:surveda_project), %{now | month: 1})
-      |> Enum.each(&start_tracking_survey/1)
+      # query for new surveys and start tracking
+      SurvedaOnaConnector.Repo.all(from s in SurvedaOnaConnector.Survey, where: is_nil(s.ona_id)) |> Enum.each(&start_tracking_survey/1)
 
       # poll tracked_surveys
       Survey
@@ -89,7 +87,17 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     :ok
   end
 
-  def start_tracking_survey(%{"id" => survey_id, "project_id" => project_id, "name" => survey_name}) do
+  def insert_or_update_survey(survey, ona_id, survey_id, project_id, survey_name) do
+    changeset = Survey.changeset(survey || %Survey{}, %{ona_id: ona_id, surveda_id: survey_id, surveda_project_id: project_id, name: survey_name, last_poll: DateTime.utc_now})
+
+    if survey do
+      Repo.update(changeset)
+    else
+      Repo.insert(changeset)
+    end
+  end
+
+  def start_tracking_survey(%{:surveda_id => survey_id, :surveda_project_id => project_id, :name => survey_name}) do
     try do
       # query questionnaires
       questionnaires = surveda_client() |> Surveda.Client.get_questionnaires(project_id, survey_id)
@@ -107,13 +115,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
       survey  = Survey |> Repo.get_by(surveda_id: survey_id)
 
-      changeset =
-        Survey.changeset(survey || %Survey{}, %{ona_id: ona_response["formid"], surveda_id: survey_id, surveda_project_id: project_id, name: survey_name, last_poll: DateTime.utc_now})
-      if survey do
-        Repo.update(changeset)
-      else
-        Repo.insert(changeset)
-      end
+      insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name)
     rescue
       e ->
         if Mix.env == :test do
