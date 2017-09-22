@@ -3,12 +3,12 @@ defmodule SurvedaOnaConnectorWeb.UserController do
   alias SurvedaOnaConnector.{Repo, User}
 
   def edit(conn, _params) do
-    user = conn |> Coherehce.current_user
+    user = conn |> Coherence.current_user
     render(conn, "edit.html", user: user, changeset: User.changeset(user, %{}))
   end
 
   def update(conn, %{"user" => user_params}) do
-    user = conn |> Coherehce.current_user
+    user = conn |> Coherence.current_user
 
     case User.update(user, user_params) do
       {:ok, user} ->
