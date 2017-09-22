@@ -17,6 +17,7 @@
         <nav role="navigation">
           <ul class="nav nav-pills pull-right">
             <li><a href="/">Home</a></li>
+            <li><a href="/settings">Settings</a></li>
           </ul>
         </nav>
         <h1>Surveda Ona Connector</h1>
