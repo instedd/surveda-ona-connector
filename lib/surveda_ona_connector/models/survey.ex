@@ -18,7 +18,7 @@ defmodule SurvedaOnaConnector.Survey do
   @doc false
   def changeset(%Survey{} = survey, attrs) do
     survey
-    |> cast(attrs, [:name, :surveda_id, :surveda_project_id, :ona_id, :last_poll, :active])
+    |> cast(attrs, [:name, :surveda_id, :surveda_project_id, :ona_id, :last_poll, :active, :user_id])
     |> validate_required([:name, :surveda_id, :surveda_project_id])
   end
 end

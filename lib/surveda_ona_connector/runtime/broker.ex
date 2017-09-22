@@ -1,7 +1,8 @@
 defmodule SurvedaOnaConnector.Runtime.Broker do
   use GenServer
   import Ecto.Query
-  alias SurvedaOnaConnector.{Repo, Logger, Survey}
+  import Ecto.Changeset
+  alias SurvedaOnaConnector.{Repo, Logger, Survey, User}
   alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
 
   @poll_interval :timer.minutes(20)
@@ -74,21 +75,26 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     client |> Surveda.Client.get_results(project_id, survey_id, datetime)
   end
 
-  def ona_client() do
-    Ona.Client.new(environment_variable_named(:ona_host),environment_variable_named(:ona_api_token))
+  def ona_client(ona_api_token) do
+    Ona.Client.new(environment_variable_named(:ona_host),ona_api_token)
   end
 
-  def submit_ona_form(client, xls_form) do
-    client |> Ona.Client.submit_project_form(environment_variable_named(:ona_project), xls_form)
+  def submit_ona_form(client, xls_form, ona_project_id) do
+    client |> Ona.Client.submit_project_form(ona_project_id, xls_form)
   end
 
   def delete_all_project_forms do
-    ona_client() |> Ona.Client.delete_all_project_forms(environment_variable_named(:ona_project))
+    ona_client(environment_variable_named(:ona_api_token)) |> Ona.Client.delete_all_project_forms(environment_variable_named(:ona_project))
     :ok
   end
 
-  def insert_or_update_survey(survey, ona_id, survey_id, project_id, survey_name) do
+  def insert_or_update_survey(survey, ona_id, survey_id, project_id, survey_name, user_id) do
     changeset = Survey.changeset(survey || %Survey{}, %{ona_id: ona_id, surveda_id: survey_id, surveda_project_id: project_id, name: survey_name, last_poll: DateTime.utc_now})
+
+    changeset = case user_id do
+      nil -> changeset
+      _   -> cast(changeset, %{user_id: user_id}, [:user_id])
+    end
 
     if survey do
       Repo.update(changeset)
@@ -111,11 +117,12 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       xls_form = builder |> XLSFormBuilder.build()
 
       # submit form
-      {:ok, ona_response} = ona_client() |> submit_ona_form(xls_form)
-
       survey  = Survey |> Repo.get_by(surveda_id: survey_id)
+      survey_user = User |> Repo.get_by(id: survey.user_id)
 
-      insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name)
+      {:ok, ona_response} = ona_client(survey_user.ona_api_token) |> submit_ona_form(xls_form, survey_user.ona_project_id)
+
+      insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name, nil)
     rescue
       e ->
         if Mix.env == :test do

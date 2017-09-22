@@ -1,5 +1,6 @@
 defmodule SurvedaOnaConnectorWeb.ProjectController do
   alias SurvedaOnaConnector.Runtime.{Broker, Surveda}
+  alias SurvedaOnaConnectorWeb.UserController
   # alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
   use SurvedaOnaConnectorWeb, :controller
   import Ecto.Query
@@ -23,7 +24,8 @@ defmodule SurvedaOnaConnectorWeb.ProjectController do
   end
 
   def track_survey(conn, %{"survey_id" => survey_id, "project_id" => project_id, "survey_name" => survey_name}) do
-    Broker.insert_or_update_survey(nil, nil, survey_id, project_id, survey_name)
+    current_user = UserController.current_user(conn)
+    Broker.insert_or_update_survey(nil, nil, survey_id, project_id, survey_name, current_user.id)
 
     redirect conn, to: project_path(conn, :show, project_id)
   end

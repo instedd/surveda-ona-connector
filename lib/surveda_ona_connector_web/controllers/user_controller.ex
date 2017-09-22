@@ -3,7 +3,7 @@ defmodule SurvedaOnaConnectorWeb.UserController do
   alias SurvedaOnaConnector.{Repo, User}
 
   # Dummy method until coherence takes over
-  defp current_user(conn) do
+  def current_user(conn) do
     user = User |> Repo.one
 
     if user do
