@@ -20,7 +20,7 @@ defmodule SurvedaOnaConnector.Mixfile do
   def application do
     [
       mod: {SurvedaOnaConnector.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :coherence]
     ]
   end
 
@@ -42,7 +42,9 @@ defmodule SurvedaOnaConnector.Mixfile do
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
       {:oauth2, "~> 0.7.0"},
-      {:elixlsx, "~> 0.2.0"}
+      {:elixlsx, "~> 0.2.0"},
+      {:coherence, "~> 0.5"},
+      {:alto_guisso, git: "https://github.com/instedd/alto_guisso_ex.git"}
     ]
   end
 

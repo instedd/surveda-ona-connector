@@ -15,9 +15,15 @@ defmodule SurvedaOnaConnectorWeb.UserControllerTest do
     user
   end
 
-  describe "edit user" do
-    setup [:create_user]
+  setup %{conn: conn} do
+    user = fixture(:user)
+    conn = conn
+      |> put_private(:test_user, user)
+      |> put_req_header("accept", "application/json")
+    {:ok, conn: conn, user: user}
+  end
 
+  describe "edit user" do
     test "renders form for editing chosen user", %{conn: conn, user: user} do
       conn = get conn, edit_settings_path(conn, :edit)
       assert html_response(conn, 200) =~ "Edit User"
@@ -25,8 +31,6 @@ defmodule SurvedaOnaConnectorWeb.UserControllerTest do
   end
 
   describe "update user" do
-    setup [:create_user]
-
     test "redirects when data is valid", %{conn: conn, user: user} do
       conn = put conn, update_settings_path(conn, :update), user: @update_attrs
       assert redirected_to(conn) == edit_settings_path(conn, :edit)

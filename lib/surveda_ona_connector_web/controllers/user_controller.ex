@@ -2,27 +2,13 @@ defmodule SurvedaOnaConnectorWeb.UserController do
   use SurvedaOnaConnectorWeb, :controller
   alias SurvedaOnaConnector.{Repo, User}
 
-  # Dummy method until coherence takes over
-  def current_user(conn) do
-    user = User |> Repo.one
-
-    if user do
-      user
-    else
-      User.changeset(user || %User{}, %{email: "foo@example.com"})
-      |> Repo.insert!
-
-      User |> Repo.one
-    end
-  end
-
   def edit(conn, _params) do
-    user = conn |> current_user
+    user = conn |> Coherehce.current_user
     render(conn, "edit.html", user: user, changeset: User.changeset(user, %{}))
   end
 
   def update(conn, %{"user" => user_params}) do
-    user = conn |> current_user
+    user = conn |> Coherehce.current_user
 
     case User.update(user, user_params) do
       {:ok, user} ->
