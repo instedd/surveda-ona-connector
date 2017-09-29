@@ -17,7 +17,7 @@ defmodule SurvedaOnaConnector.Runtime.Ona.Client do
       |> parse_response
   end
 
-  def submit_respondent_form(client, survey, json) do
+  def submit_respondent_form(client, _survey, json) do
     url = "#{client.base_url}/api/v1/submissions"
     headers = [{"content-type", "application/json"}]
 

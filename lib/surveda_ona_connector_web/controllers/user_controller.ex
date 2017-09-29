@@ -1,6 +1,6 @@
 defmodule SurvedaOnaConnectorWeb.UserController do
   use SurvedaOnaConnectorWeb, :controller
-  alias SurvedaOnaConnector.{Repo, User}
+  alias SurvedaOnaConnector.User
 
   def edit(conn, _params) do
     user = conn |> Coherence.current_user
@@ -11,7 +11,7 @@ defmodule SurvedaOnaConnectorWeb.UserController do
     user = conn |> Coherence.current_user
 
     case User.update(user, user_params) do
-      {:ok, user} ->
+      {:ok, _user} ->
         conn
         |> put_flash(:info, "User updated successfully.")
         |> redirect(to: edit_settings_path(conn, :edit))

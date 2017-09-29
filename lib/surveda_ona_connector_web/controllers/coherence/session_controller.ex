@@ -8,9 +8,6 @@ defmodule SurvedaOnaConnectorWeb.Coherence.SessionController do
   alias SurvedaOnaConnector.Repo
   use Coherence.Config
   import Ecto.Query
-  alias Coherence.ControllerHelpers, as: Helpers
-
-  import SurvedaOnaConnectorWeb.Router.Helpers
 
   plug :redirect_logged_in when action in [:new]
 
@@ -30,7 +27,7 @@ defmodule SurvedaOnaConnectorWeb.Coherence.SessionController do
     |> redirect(to: redirect || "/")
   end
 
-  defp find_or_create_user(email, name) do
+  defp find_or_create_user(email, _name) do
     case Repo.one(from u in User, where: field(u, :email) == ^email) do
       nil ->
         %User{}
@@ -54,7 +51,6 @@ defmodule SurvedaOnaConnectorWeb.Coherence.SessionController do
   Delete the user session.
   """
   def delete(conn) do
-    user = conn.assigns[Config.assigns_key]
     apply(Config.auth_module, Config.delete_login, [conn])
   end
 end

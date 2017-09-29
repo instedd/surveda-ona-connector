@@ -32,17 +32,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       |> preload(:user)
       |> Repo.all()
       |> Enum.each(fn survey ->
-        IO.inspect(survey)
-        IO.inspect(survey.user)
-        client = surveda_client(survey.user.email)
-
-        if survey.ona_id do
-          survey
-        else
-          survey
-          |> start_tracking_survey(client)
-        end
-        |> poll_survey(client)
+        poll_survey(survey)
       end)
 
     rescue
@@ -114,10 +104,8 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   def start_tracking_survey(%{:surveda_id => survey_id, :surveda_project_id => project_id, :name => survey_name}, surveda_client) do
     try do
-      # query questionnaires
       questionnaires = surveda_client |> Surveda.Client.get_questionnaires(project_id, survey_id)
 
-      # build xlsform
       builder = questionnaires
       |> Enum.reduce(XLSFormBuilder.new("#{ona_valid_filename(survey_name)}.xlsx"), fn(quiz, builder) ->
         builder |> XLSFormBuilder.add_questionnaire(quiz)
@@ -125,7 +113,6 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
       xls_form = builder |> XLSFormBuilder.build()
 
-      # submit form
       survey  = Survey |> Repo.get_by(surveda_id: survey_id)
       survey_user = User |> Repo.get_by(id: survey.user_id)
 
@@ -143,8 +130,17 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  defp poll_survey(survey, client) do
+  defp poll_survey(survey) do
     try do
+      client = surveda_client(survey.user.email)
+
+      survey = if survey.ona_id do
+        survey
+      else
+        survey
+        |> start_tracking_survey(client)
+      end
+
       results = client
       |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
 
