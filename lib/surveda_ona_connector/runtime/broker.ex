@@ -149,7 +149,17 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       results = client
       |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
 
-      results["respondents"] |> Enum.each(&send_respondent_to_ona(&1, survey))
+      respondents = results["respondents"]
+
+      if !Enum.empty?(respondents) do
+        last_updated_at = respondents |> Enum.max_by(&Map.get(&1,"updated_at")) |> Map.get("updated_at")
+
+        changeset = Survey.changeset(survey, %{last_poll: last_updated_at})
+
+        Repo.update(changeset)
+
+        respondents |> Enum.each(&send_respondent_to_ona(&1, survey))
+      end
     rescue
       e ->
         if Mix.env == :test do
