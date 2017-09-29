@@ -28,5 +28,4 @@ defmodule SurvedaOnaConnector.Logger do
   defp should_log do
     Mix.env != :test
   end
-
 end

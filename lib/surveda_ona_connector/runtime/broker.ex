@@ -26,17 +26,25 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     {:ok, nil}
   end
 
-  def handle_info(:poll, state, now) do
+  def handle_info(:poll, state) do
     try do
-      # query for new surveys and start tracking
-      SurvedaOnaConnector.Repo.all(from s in SurvedaOnaConnector.Survey, where: is_nil(s.ona_id)) |> Enum.each(&start_tracking_survey/1)
+      from(s in Survey, where: s.active == true)
+      |> preload(:user)
+      |> Repo.all()
+      |> Enum.each(fn survey ->
+        IO.inspect(survey)
+        IO.inspect(survey.user)
+        client = surveda_client(survey.user.email)
 
-      # poll tracked_surveys
-      Survey
-      |> Repo.all
-      |> Enum.each(fn survey -> poll_survey(survey) end)
+        if survey.ona_id do
+          survey
+        else
+          survey
+          |> start_tracking_survey(client)
+        end
+        |> poll_survey(client)
+      end)
 
-      {:noreply, state}
     rescue
       e ->
         if Mix.env == :test do
@@ -48,10 +56,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     after
       :timer.send_after(@poll_interval, :poll)
     end
-  end
-
-  def handle_info(:poll, state) do
-    handle_info(:poll, state, DateTime.utc_now)
+    {:noreply, state}
   end
 
   def handle_info(_, state) do
@@ -63,8 +68,8 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     {:reply, :ok, state}
   end
 
-  def surveda_client() do
-    Surveda.Client.new(environment_variable_named(:surveda_host),environment_variable_named(:surveda_api_token))
+  def surveda_client(user_email) do
+    Surveda.Client.new(environment_variable_named(:surveda_host), user_email)
   end
 
   def running_surveys_since(client, project_id, datetime) do
@@ -101,16 +106,16 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
 
     if survey do
-      Repo.update(changeset)
+      Repo.update!(changeset)
     else
-      Repo.insert(changeset)
+      Repo.insert!(changeset)
     end
   end
 
-  def start_tracking_survey(%{:surveda_id => survey_id, :surveda_project_id => project_id, :name => survey_name}) do
+  def start_tracking_survey(%{:surveda_id => survey_id, :surveda_project_id => project_id, :name => survey_name}, surveda_client) do
     try do
       # query questionnaires
-      questionnaires = surveda_client() |> Surveda.Client.get_questionnaires(project_id, survey_id)
+      questionnaires = surveda_client |> Surveda.Client.get_questionnaires(project_id, survey_id)
 
       # build xlsform
       builder = questionnaires
@@ -138,10 +143,10 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  defp poll_survey(survey) do
+  defp poll_survey(survey, client) do
     try do
       # poll results
-      results = surveda_client()
+      results = client
       |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
 
       results["respondents"] |> Enum.each(&send_respondent_to_ona(&1, survey))
@@ -178,7 +183,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
     survey_user = User |> Repo.get_by(id: survey.user_id)
     #TODO: If it returns error, catch it and save the last ok respondent as the timestamp of the last
-    {:ok, ona_response} = ona_client(survey_user.ona_api_token) |> submit_respondent_form(survey, json)
+    {:ok, _ona_response} = ona_client(survey_user.ona_api_token) |> submit_respondent_form(survey, json)
   end
 
   def transform_respondent_into_ona_form(respondent) do

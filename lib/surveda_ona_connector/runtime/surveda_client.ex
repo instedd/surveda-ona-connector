@@ -1,10 +1,25 @@
 defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
   alias SurvedaOnaConnector.Runtime.Surveda.Client
+  alias SurvedaOnaConnector.Logger
   defstruct [:base_url, :oauth2_client]
 
-  def new(url, token) do
-    oauth2_client = OAuth2.Client.new(token: %OAuth2.AccessToken{access_token: token})
-    %Client{base_url: url, oauth2_client: oauth2_client}
+  def new(url, user_email) do
+    client = OAuth2.Client.new([
+      strategy: OAuth2.Strategy.ClientCredentials, # default strategy is AuthCode
+      client_id: Application.get_env(:alto_guisso, :client_id),
+      client_secret: Application.get_env(:alto_guisso, :client_secret),
+      token_url: "#{Application.get_env(:alto_guisso, :base_url)}/oauth2/token",
+      params: %{scope: "app=#{URI.parse(url).host} user=#{user_email} token_type=bearer"}
+    ])
+
+    client = OAuth2.Client.get_token!(client)
+
+    if client.token.access_token == nil do
+      Logger.error "Error obtaining guisso token: #{client}"
+      raise "401"
+    end
+
+    %Client{base_url: url, oauth2_client: client}
   end
 
   def get_projects(client) do

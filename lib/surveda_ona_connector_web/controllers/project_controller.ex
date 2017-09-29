@@ -1,20 +1,18 @@
 defmodule SurvedaOnaConnectorWeb.ProjectController do
   alias SurvedaOnaConnector.Runtime.{Broker, Surveda}
-  alias SurvedaOnaConnectorWeb.UserController
-  # alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
   use SurvedaOnaConnectorWeb, :controller
   import Ecto.Query
   plug Guisso.SSO, session_controller: SurvedaOnaConnectorWeb.Coherence.SessionController
 
   def index(conn, _params) do
-    projects = Broker.surveda_client()
+    projects = Broker.surveda_client(Coherence.current_user(conn).email)
       |> Surveda.Client.get_projects()
 
     render(conn, "index.html", projects: projects)
   end
 
   def show(conn, %{"id" => id}) do
-    surveys = Broker.surveda_client()
+    surveys = Broker.surveda_client(Coherence.current_user(conn).email)
       |> Surveda.Client.get_all_surveys(id)
 
     surveys_local_ids = SurvedaOnaConnector.Repo.all(from s in SurvedaOnaConnector.Survey, where: s.surveda_project_id == ^id)
@@ -31,7 +29,6 @@ defmodule SurvedaOnaConnectorWeb.ProjectController do
   end
 
   defp get_surveda_id(survey, acc) do
-    acc = acc ++ [survey.surveda_id]
+    acc ++ [survey.surveda_id]
   end
-
 end
