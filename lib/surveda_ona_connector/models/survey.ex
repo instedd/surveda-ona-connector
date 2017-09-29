@@ -10,6 +10,7 @@ defmodule SurvedaOnaConnector.Survey do
     field :ona_id, :integer
     field :last_poll, :utc_datetime
     field :active, :boolean, default: true
+    field :ona_name, :string
     belongs_to :user, SurvedaOnaConnector.User
 
     timestamps()
@@ -18,7 +19,7 @@ defmodule SurvedaOnaConnector.Survey do
   @doc false
   def changeset(%Survey{} = survey, attrs) do
     survey
-    |> cast(attrs, [:name, :surveda_id, :surveda_project_id, :ona_id, :last_poll, :active, :user_id])
+    |> cast(attrs, [:name, :surveda_id, :surveda_project_id, :ona_id, :last_poll, :active, :user_id, :ona_name])
     |> validate_required([:name, :surveda_id, :surveda_project_id])
   end
 end

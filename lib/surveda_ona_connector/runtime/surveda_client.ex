@@ -41,7 +41,12 @@ defmodule SurvedaOnaConnector.Runtime.Surveda.Client do
   end
 
   def get_results(client, project_id, survey_id, since) do
-    url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/results?#{URI.encode_query(final: true, _format: :json, since: since)}"
+    query = case since do
+      nil -> %{final: true, format: :json}
+      _   -> %{final: true, format: :json, since: since}
+    end
+
+    url = "#{client.base_url}/api/v1/projects/#{project_id}/surveys/#{survey_id}/respondents/results?#{URI.encode_query(query)}"
     client |> get(url)
   end
 

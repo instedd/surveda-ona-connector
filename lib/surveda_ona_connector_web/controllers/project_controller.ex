@@ -25,7 +25,7 @@ defmodule SurvedaOnaConnectorWeb.ProjectController do
 
   def track_survey(conn, %{"survey_id" => survey_id, "project_id" => project_id, "survey_name" => survey_name}) do
     current_user = Coherence.current_user(conn)
-    Broker.insert_or_update_survey(nil, nil, survey_id, project_id, survey_name, current_user.id)
+    Broker.insert_or_update_survey(nil, nil, survey_id, project_id, survey_name, current_user.id, nil)
 
     redirect conn, to: project_path(conn, :show, project_id)
   end

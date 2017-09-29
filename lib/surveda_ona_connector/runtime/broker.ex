@@ -34,7 +34,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
       # poll tracked_surveys
       Survey
       |> Repo.all
-      |> Enum.each(fn survey -> poll_survey(survey, now) end)
+      |> Enum.each(fn survey -> poll_survey(survey) end)
 
       {:noreply, state}
     rescue
@@ -83,13 +83,17 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     client |> Ona.Client.submit_project_form(ona_project_id, xls_form)
   end
 
+  def submit_respondent_form(client, survey, json) do
+    client |> Ona.Client.submit_respondent_form(survey, json)
+  end
+
   def delete_all_project_forms do
     ona_client(environment_variable_named(:ona_api_token)) |> Ona.Client.delete_all_project_forms(environment_variable_named(:ona_project))
     :ok
   end
 
-  def insert_or_update_survey(survey, ona_id, survey_id, project_id, survey_name, user_id) do
-    changeset = Survey.changeset(survey || %Survey{}, %{ona_id: ona_id, surveda_id: survey_id, surveda_project_id: project_id, name: survey_name, last_poll: DateTime.utc_now})
+  def insert_or_update_survey(survey, ona_id, survey_id, project_id, survey_name, user_id, ona_name) do
+    changeset = Survey.changeset(survey || %Survey{}, %{ona_id: ona_id, surveda_id: survey_id, surveda_project_id: project_id, name: survey_name, ona_name: ona_name, last_poll: nil})
 
     changeset = case user_id do
       nil -> changeset
@@ -122,7 +126,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
       {:ok, ona_response} = ona_client(survey_user.ona_api_token) |> submit_ona_form(xls_form, survey_user.ona_project_id)
 
-      insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name, nil)
+      insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name, nil, ona_response["id_string"])
     rescue
       e ->
         if Mix.env == :test do
@@ -134,15 +138,13 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  defp poll_survey(survey, _datetime) do
+  defp poll_survey(survey) do
     try do
       # poll results
-      # results = surveda_client()
-      # |> results_since(survey.surveda_project_id, survey.surveda_id, datetime)
+      results = surveda_client()
+      |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
 
-      # build Form Submition
-
-      # push to ona
+      results["respondents"] |> Enum.each(&send_respondent_to_ona(&1, survey))
     rescue
       e ->
         if Mix.env == :test do
@@ -169,7 +171,29 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     end
   end
 
-  defp ona_valid_filename(survey_name) do
+  def send_respondent_to_ona(respondent, survey) do
+    ona_respondent = transform_respondent_into_ona_form(respondent)
+
+    json = %{"id": survey.ona_name, "submission": ona_respondent}
+
+    survey_user = User |> Repo.get_by(id: survey.user_id)
+    #TODO: If it returns error, catch it and save the last ok respondent as the timestamp of the last
+    {:ok, ona_response} = ona_client(survey_user.ona_api_token) |> submit_respondent_form(survey, json)
+  end
+
+  def transform_respondent_into_ona_form(respondent) do
+    responses = respondent["responses"]
+
+    transformed_responses = responses |> Enum.reduce(%{}, &transform_response/2)
+
+    transformed_responses
+  end
+
+  def transform_response(response, acc) do
+    Map.put(acc, response["name"], response["value"])
+  end
+
+  def ona_valid_filename(survey_name) do
     (survey_name || "Untitled Survey")
     |> String.replace(~r/ ([a-z])/, "_\\1")
     |> String.replace(" ", "")
