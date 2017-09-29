@@ -38,6 +38,10 @@ config :coherence,
   opts: [:authenticatable]
 # %% End Coherence Configuration %%
 
+config :surveda_ona_connector, SurvedaOnaConnector.Runtime.Broker,
+  surveda_host: {:system, "SURVEDA_BASE_URL"},
+  ona_host: {:system, "ONA_BASE_URL", "https://api.ona.io"}
+
 config :alto_guisso,
   enabled: System.get_env("GUISSO_ENABLED") == "true",
   base_url: System.get_env("GUISSO_BASE_URL"),
