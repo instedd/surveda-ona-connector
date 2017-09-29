@@ -145,7 +145,6 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   defp poll_survey(survey, client) do
     try do
-      # poll results
       results = client
       |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
 
@@ -155,10 +154,17 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
         last_updated_at = respondents |> Enum.max_by(&Map.get(&1,"updated_at")) |> Map.get("updated_at")
 
         changeset = Survey.changeset(survey, %{last_poll: last_updated_at})
-
-        Repo.update(changeset)
+        Repo.update!(changeset)
 
         respondents |> Enum.each(&send_respondent_to_ona(&1, survey))
+      else
+        updated_survey = Surveda.Client.get_survey(client, survey.surveda_project_id, survey.surveda_id)
+
+        if updated_survey["state"] == "terminated" do
+          survey
+          |> Survey.changeset(%{active: false})
+          |> Repo.update!
+        end
       end
     rescue
       e ->

@@ -15,10 +15,13 @@ defmodule SurvedaOnaConnectorWeb.ProjectController do
     surveys = Broker.surveda_client(Coherence.current_user(conn).email)
       |> Surveda.Client.get_all_surveys(id)
 
-    surveys_local_ids = SurvedaOnaConnector.Repo.all(from s in SurvedaOnaConnector.Survey, where: s.surveda_project_id == ^id)
+    surveys_local_ids = SurvedaOnaConnector.Repo.all(from s in SurvedaOnaConnector.Survey, where: s.surveda_project_id == ^id and s.active == true)
       |> Enum.reduce([], &get_surveda_id/2)
 
-    render(conn, "show.html", surveys: surveys, project_id: id, surveys_local_ids: surveys_local_ids)
+    surveys_inactive_ids = SurvedaOnaConnector.Repo.all(from s in SurvedaOnaConnector.Survey, where: s.surveda_project_id == ^id and s.active == false)
+      |> Enum.reduce([], &get_surveda_id/2)
+
+    render(conn, "show.html", surveys: surveys, project_id: id, surveys_local_ids: surveys_local_ids, surveys_inactive_ids: surveys_inactive_ids)
   end
 
   def track_survey(conn, %{"survey_id" => survey_id, "project_id" => project_id, "survey_name" => survey_name}) do
