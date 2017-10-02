@@ -15,44 +15,51 @@ defmodule SurvedaOnaConnector.Runtime.XLSFormBuilder do
   def add_questionnaire(builder, quiz) do
     quiz["steps"]
     |> Enum.reduce(builder, fn(step, builder) ->
-      case step["type"] do
-        "multiple-choice" ->
-          survey = builder.survey
-          |> Sheet.set_at(length(builder.survey.rows), 0, "select_one #{step["store"]}")
-          |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
-          |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
+      if step["store"] && step["store"] != "" do
+        case step["type"] do
+          "multiple-choice" ->
+            title = if step["title"] && step["title"] != "" do
+              step["title"]
+            else
+              step["store"]
+            end
+            survey = builder.survey
+            |> Sheet.set_at(length(builder.survey.rows), 0, "select_one #{step["store"]}")
+            |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
+            |> Sheet.set_at(length(builder.survey.rows), 2, title)
 
-          #add empty row to choices sheet if not the first choice
-          builder = if length(builder.choices.rows) > 1 do
-            %{builder | choices: Sheet.set_at(builder.choices, length(builder.choices.rows), 0, "")}
-          else
-           builder
-          end
+            #add empty row to choices sheet if not the first choice
+            builder = if length(builder.choices.rows) > 1 do
+              %{builder | choices: Sheet.set_at(builder.choices, length(builder.choices.rows), 0, "")}
+            else
+             builder
+            end
 
-          choices = step["choices"]
-          |> Enum.reduce(builder.choices, fn(choice, sheet) ->
-            sheet
-            |> Sheet.set_at(length(sheet.rows), 0, step["store"])
-            |> Sheet.set_at(length(sheet.rows), 1, choice["value"])
-            |> Sheet.set_at(length(sheet.rows), 2, choice["value"])
-          end)
+            choices = step["choices"]
+            |> Enum.reduce(builder.choices, fn(choice, sheet) ->
+              sheet
+              |> Sheet.set_at(length(sheet.rows), 0, step["store"])
+              |> Sheet.set_at(length(sheet.rows), 1, choice["value"])
+              |> Sheet.set_at(length(sheet.rows), 2, choice["value"])
+            end)
 
-          %{builder | survey: survey, choices: choices}
-        "explanation" ->
-          survey = builder.survey
-          |> Sheet.set_at(length(builder.survey.rows), 0, "note")
-          |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
-          |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
+            %{builder | survey: survey, choices: choices}
+          "numeric" ->
+            title = if step["title"] && step["title"] != "" do
+              step["title"]
+            else
+              step["store"]
+            end
+            survey = builder.survey
+            |> Sheet.set_at(length(builder.survey.rows), 0, "integer")
+            |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
+            |> Sheet.set_at(length(builder.survey.rows), 2, title)
 
-          %{builder | survey: survey}
-        "numeric" ->
-          survey = builder.survey
-          |> Sheet.set_at(length(builder.survey.rows), 0, "integer")
-          |> Sheet.set_at(length(builder.survey.rows), 1, step["store"])
-          |> Sheet.set_at(length(builder.survey.rows), 2, step["title"])
-
-          %{builder | survey: survey}
-        _ -> builder
+            %{builder | survey: survey}
+          _ -> builder
+        end
+      else
+        builder
       end
     end)
   end
