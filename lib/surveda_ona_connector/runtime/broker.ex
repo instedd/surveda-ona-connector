@@ -5,7 +5,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   alias SurvedaOnaConnector.{Repo, Logger, Survey, User}
   alias SurvedaOnaConnector.Runtime.{XLSFormBuilder, Ona, Surveda}
 
-  @poll_interval :timer.minutes(20)
+  @default_poll_interval :timer.minutes(20)
   @server_ref {:global, __MODULE__}
 
   def server_ref, do: @server_ref
@@ -44,7 +44,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
         end
         Logger.error "Error occurred while polling surveda: #{inspect e} #{inspect System.stacktrace}"
     after
-      :timer.send_after(@poll_interval, :poll)
+      :timer.send_after(poll_interval(), :poll)
     end
     {:noreply, state}
   end
@@ -60,6 +60,19 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   def surveda_client(user_email) do
     Surveda.Client.new(environment_variable_named(:surveda_host), user_email)
+  end
+
+  def poll_interval do
+    case environment_variable_named(:poll_interval) do
+      nil -> @default_poll_interval
+      interval ->
+        case Integer.parse(interval) do
+          {minutes, _} -> :timer.minutes(minutes)
+          _ ->
+            Logger.warn "Invalid value set to poll interval (#{interval})"
+            @default_poll_interval
+        end
+    end
   end
 
   def running_surveys_since(client, project_id, datetime) do

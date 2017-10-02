@@ -39,6 +39,7 @@ config :coherence,
 # %% End Coherence Configuration %%
 
 config :surveda_ona_connector, SurvedaOnaConnector.Runtime.Broker,
+  poll_interval: {:system, "POLL_INTERVAL"},
   surveda_host: {:system, "SURVEDA_BASE_URL"},
   ona_host: {:system, "ONA_BASE_URL", "https://api.ona.io"}
 
