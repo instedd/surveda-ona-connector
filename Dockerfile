@@ -17,6 +17,7 @@ RUN mix deps.get --only prod
 RUN mix deps.compile
 
 ADD . /app
+RUN if [ -d .git ]; then git describe --always > VERSION; fi
 RUN mix compile
 RUN mix phx.digest
 

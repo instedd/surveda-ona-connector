@@ -22,6 +22,13 @@ config :logger, :console,
   format: "$dateT$timeZ $metadata[$level] $message\n",
   metadata: [:request_id]
 
+version = case File.read("VERSION") do
+  {:ok, version} -> String.trim(version)
+  {:error, :enoent} -> "#{Mix.Project.config[:version]}-#{Mix.env}"
+end
+
+config :surveda_ona_connector, version: version
+
 config :oauth2,
   warn_missing_serializer: false
 
