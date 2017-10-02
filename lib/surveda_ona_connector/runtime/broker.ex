@@ -215,8 +215,6 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
   def ona_valid_filename(survey_name) do
     (survey_name || "Untitled Survey")
-    |> String.replace(~r/ ([a-z])/, "_\\1")
-    |> String.replace(" ", "")
-    |> Macro.underscore()
+    |> String.replace(~r/[^\w]/, "_")
   end
 end
