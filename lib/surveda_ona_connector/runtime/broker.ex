@@ -103,31 +103,21 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   end
 
   def start_tracking_survey(%{:surveda_id => survey_id, :surveda_project_id => project_id, :name => survey_name}, surveda_client) do
-    try do
-      questionnaires = surveda_client |> Surveda.Client.get_questionnaires(project_id, survey_id)
+    questionnaires = surveda_client |> Surveda.Client.get_questionnaires(project_id, survey_id)
 
-      builder = questionnaires
-      |> Enum.reduce(XLSFormBuilder.new("#{ona_valid_filename(survey_name)}.xlsx"), fn(quiz, builder) ->
-        builder |> XLSFormBuilder.add_questionnaire(quiz)
-      end)
+    builder = questionnaires
+    |> Enum.reduce(XLSFormBuilder.new("#{ona_valid_filename(survey_name)}.xlsx"), fn(quiz, builder) ->
+      builder |> XLSFormBuilder.add_questionnaire(quiz)
+    end)
 
-      xls_form = builder |> XLSFormBuilder.build()
+    xls_form = builder |> XLSFormBuilder.build()
 
-      survey  = Survey |> Repo.get_by(surveda_id: survey_id)
-      survey_user = User |> Repo.get_by(id: survey.user_id)
+    survey  = Survey |> Repo.get_by(surveda_id: survey_id)
+    survey_user = User |> Repo.get_by(id: survey.user_id)
 
-      {:ok, ona_response} = ona_client(survey_user.ona_api_token) |> submit_ona_form(xls_form, survey_user.ona_project_id)
+    {:ok, ona_response} = ona_client(survey_user.ona_api_token) |> submit_ona_form(xls_form, survey_user.ona_project_id)
 
-      insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name, nil, ona_response["id_string"])
-    rescue
-      e ->
-        if Mix.env == :test do
-          IO.inspect e
-          IO.inspect System.stacktrace()
-          raise e
-        end
-        Logger.error "Error occurred while polling survey (id: #{survey_id}): #{inspect e} #{inspect System.stacktrace}"
-    end
+    insert_or_update_survey(survey, ona_response["formid"], survey_id, project_id, survey_name, nil, ona_response["id_string"])
   end
 
   defp poll_survey(survey) do
