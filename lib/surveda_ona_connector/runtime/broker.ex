@@ -137,32 +137,34 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
     try do
       client = surveda_client(survey.user.email)
 
-      survey = if survey.ona_id do
-        survey
-      else
-        survey
-        |> start_tracking_survey(client)
-      end
+      updated_survey = Surveda.Client.get_survey(client, survey.surveda_project_id, survey.surveda_id)
 
-      results = client
-      |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
-
-      respondents = results["respondents"]
-
-      if !Enum.empty?(respondents) do
-        last_updated_at = respondents |> Enum.max_by(&Map.get(&1,"updated_at")) |> Map.get("updated_at")
-
-        changeset = Survey.changeset(survey, %{last_poll: last_updated_at})
-        Repo.update!(changeset)
-
-        respondents |> Enum.each(&send_respondent_to_ona(&1, survey))
-      else
-        updated_survey = Surveda.Client.get_survey(client, survey.surveda_project_id, survey.surveda_id)
-
-        if updated_survey["state"] == "terminated" do
+      if updated_survey["state"] == "running" || updated_survey["state"] == "terminated" do
+        survey = if survey.ona_id do
           survey
-          |> Survey.changeset(%{active: false})
-          |> Repo.update!
+        else
+            survey
+            |> start_tracking_survey(client)
+        end
+
+        results = client
+        |> results_since(survey.surveda_project_id, survey.surveda_id, survey.last_poll)
+
+        respondents = results["respondents"]
+
+        if !Enum.empty?(respondents) do
+          last_updated_at = respondents |> Enum.max_by(&Map.get(&1,"updated_at")) |> Map.get("updated_at")
+
+          changeset = Survey.changeset(survey, %{last_poll: last_updated_at})
+          Repo.update!(changeset)
+
+          respondents |> Enum.each(&send_respondent_to_ona(&1, survey))
+        else
+          if updated_survey["state"] == "terminated" do
+            survey
+            |> Survey.changeset(%{active: false})
+            |> Repo.update!
+          end
         end
       end
     rescue
