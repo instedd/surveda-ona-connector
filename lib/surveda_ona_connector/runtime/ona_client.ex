@@ -47,6 +47,8 @@ defmodule SurvedaOnaConnector.Runtime.Ona.Client do
         {:error, response.status_code}
       {:error, %OAuth2.Error{reason: reason}} ->
         {:error, reason}
+      {:error, %OAuth2.Response{body: body}} ->
+        {:error, body}
     end
   end
 end
