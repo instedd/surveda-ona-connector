@@ -196,7 +196,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   def send_respondent_to_ona(respondent, survey) do
     ona_respondent = transform_respondent_into_ona_form(respondent)
 
-    json = %{"id": survey.ona_name, "submission": Map.merge(ona_respondent, %{"meta" => %{"instanceID" => respondent["phone_number"]}})}
+    json = %{"id": survey.ona_name, "submission": Map.merge(ona_respondent, %{"meta" => %{"instanceID" => "uuid:#{respondent["phone_number"]}"}})}
 
     survey_user = User |> Repo.get_by(id: survey.user_id)
     #TODO: If it returns error, catch it and save the last ok respondent as the timestamp of the last
