@@ -155,10 +155,10 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
         if !Enum.empty?(respondents) do
           last_updated_at = respondents |> Enum.max_by(&Map.get(&1,"updated_at")) |> Map.get("updated_at")
 
+          respondents |> Enum.each(&send_respondent_to_ona(&1, survey))
+
           changeset = Survey.changeset(survey, %{last_poll: last_updated_at})
           Repo.update!(changeset)
-
-          respondents |> Enum.each(&send_respondent_to_ona(&1, survey))
         else
           if updated_survey["state"] == "terminated" do
             survey
@@ -196,7 +196,7 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
   def send_respondent_to_ona(respondent, survey) do
     ona_respondent = transform_respondent_into_ona_form(respondent)
 
-    json = %{"id": survey.ona_name, "submission": ona_respondent}
+    json = %{"id": survey.ona_name, "submission": Map.merge(ona_respondent, %{"meta" => %{"instanceID" => respondent["phone_number"]}})}
 
     survey_user = User |> Repo.get_by(id: survey.user_id)
     #TODO: If it returns error, catch it and save the last ok respondent as the timestamp of the last
