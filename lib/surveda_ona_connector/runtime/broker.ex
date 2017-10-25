@@ -200,12 +200,12 @@ defmodule SurvedaOnaConnector.Runtime.Broker do
 
     survey_user = User |> Repo.get_by(id: survey.user_id)
 
-    {status, [ona_response]} = ona_client(survey_user.ona_api_token) |> submit_respondent_form(survey, json)
+    {status, ona_response} = ona_client(survey_user.ona_api_token) |> submit_respondent_form(survey, json)
 
     case status do
       :ok -> :ok
       :error ->
-        if ona_response == "Duplicate submission" do
+        if ona_response == ["Duplicate submission"] do
           Logger.warn "Duplicate respondent submission of respondent #{respondent["phone_number"]}"
         else
           Logger.warn "Unknown error when submitting respondent #{respondent["phone_number"]} Error: #{ona_response}"
